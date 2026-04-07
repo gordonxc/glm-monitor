@@ -9,9 +9,9 @@
     <key>CFBundleIdentifier</key>
     <string>com.glm.monitor</string>
     <key>CFBundleVersion</key>
-    <string>1.0.0</string>
+    <string>1.1.0</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
+    <string>1.1.0</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleExecutable</key>
@@ -22,5 +22,9 @@
     <true/>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>SUFeedURL</key>
+    <string>https://gordonxc.github.io/glm-monitor/appcast.xml</string>
+    <key>SUPublicEDKey</key>
+    <string>YOUR_EDDSA_PUBLIC_KEY</string>
 </dict>
 </plist>

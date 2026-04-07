@@ -17,6 +17,22 @@ enum StatusBarMode: String, CaseIterable {
     }
 }
 
+enum RefreshInterval: Int, CaseIterable {
+    case oneMinute = 60
+    case fiveMinutes = 300
+    case tenMinutes = 600
+    case thirtyMinutes = 1800
+
+    var label: String {
+        switch self {
+        case .oneMinute: return "1m"
+        case .fiveMinutes: return "5m"
+        case .tenMinutes: return "10m"
+        case .thirtyMinutes: return "30m"
+        }
+    }
+}
+
 @MainActor
 class MonitorViewModel: ObservableObject {
     @Published var planName: String = ""
@@ -31,9 +47,24 @@ class MonitorViewModel: ObservableObject {
     @Published var statusBarMode: StatusBarMode {
         didSet { UserDefaults.standard.set(statusBarMode.rawValue, forKey: "statusBarMode") }
     }
+    @Published var refreshInterval: RefreshInterval {
+        didSet {
+            UserDefaults.standard.set(refreshInterval.rawValue, forKey: "refreshInterval")
+            restartTimer()
+        }
+    }
+    @Published var isDarkMode: Bool = false
+    @Published var usageSnapshots: [UsageSnapshot] = []
+
+    private let usageHistory = UsageHistory()
+
+    var checkForUpdates: (() -> Void)?
 
     private var client: ZAIClient?
     private var refreshTimer: Timer?
+    private var appearanceObservation: NSKeyValueObservation?
+    private var previousSessionPercentage: Int?
+    private var previousDailyPercentage: Int?
 
     private let logFile = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent(".glm-monitor/debug.log")
@@ -73,6 +104,14 @@ class MonitorViewModel: ObservableObject {
         // Check current launch-at-login state
         launchAtLogin = SMAppService.mainApp.status == .enabled
 
+        // Detect dark mode
+        updateDarkMode()
+        appearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+            Task { @MainActor in
+                self?.updateDarkMode()
+            }
+        }
+
         let apiKey = APIKeyProvider.resolve()
         debugLog("initialize - apiKey: \(apiKey != nil ? "found (\(apiKey!.prefix(10))...)" : "nil")")
         guard let apiKey else {
@@ -82,12 +121,15 @@ class MonitorViewModel: ObservableObject {
         }
         client = ZAIClient(apiKey: apiKey)
         Task { await refresh() }
-        startTimer()
+        restartTimer()
     }
 
     init() {
         let saved = UserDefaults.standard.string(forKey: "statusBarMode") ?? "number"
         _statusBarMode = Published(initialValue: StatusBarMode(rawValue: saved) ?? .number)
+
+        let savedInterval = UserDefaults.standard.integer(forKey: "refreshInterval")
+        _refreshInterval = Published(initialValue: RefreshInterval(rawValue: savedInterval) ?? .fiveMinutes)
 
         DispatchQueue.main.async { [weak self] in
             self?.initialize()
@@ -171,6 +213,34 @@ class MonitorViewModel: ObservableObject {
             lastUpdated = Date()
             debugLog("refresh done - plan: \(planName), session: \(sessionLimit != nil), weekly: \(weeklyLimit != nil), search: \(searchLimit != nil)")
 
+            // Check for usage alert notifications
+            if let sessionPct = sessionLimit?.percentage {
+                NotificationManager.shared.checkAndNotify(
+                    metric: "session",
+                    percentage: sessionPct,
+                    previousPercentage: previousSessionPercentage
+                )
+                previousSessionPercentage = sessionPct
+            }
+            if let dailyPct = weeklyLimit?.percentage {
+                NotificationManager.shared.checkAndNotify(
+                    metric: "daily",
+                    percentage: dailyPct,
+                    previousPercentage: previousDailyPercentage
+                )
+                previousDailyPercentage = dailyPct
+            }
+
+            // Record history snapshot
+            let snapshot = UsageSnapshot(
+                timestamp: Date(),
+                sessionPercentage: sessionLimit?.percentage ?? 0,
+                dailyPercentage: weeklyLimit?.percentage ?? 0,
+                searchPercentage: searchLimit?.percentage ?? 0
+            )
+            usageHistory.addSnapshot(snapshot)
+            usageSnapshots = usageHistory.snapshots
+
         } catch {
             errorMessage = error.localizedDescription
             debugLog("ERROR: \(error.localizedDescription)")
@@ -193,16 +263,22 @@ class MonitorViewModel: ObservableObject {
         }
     }
 
-    private func startTimer() {
+    private func restartTimer() {
         refreshTimer?.invalidate()
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(refreshInterval.rawValue), repeats: true) { [weak self] _ in
             Task { @MainActor in
                 await self?.refresh()
             }
         }
     }
 
+    private func updateDarkMode() {
+        let bestMatch = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua])
+        isDarkMode = (bestMatch == .darkAqua)
+    }
+
     deinit {
         refreshTimer?.invalidate()
+        appearanceObservation?.invalidate()
     }
 }

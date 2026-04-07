@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>GLM Monitor Changelog</title>
+        <link>https://gordonxc.github.io/glm-monitor/appcast.xml</link>
+        <description>GLM Monitor - macOS menu bar app for Z.ai usage monitoring</description>
+        <language>en</language>
+        <item>
+            <title>Version 1.1.0</title>
+            <sparkle:version>1.1.0</sparkle:version>
+            <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <pubDate>Mon, 07 Apr 2026 00:00:00 +0000</pubDate>
+            <enclosure
+                url="https://github.com/gordonxc/glm-monitor/releases/download/v1.1.0/GLMMonitor-1.1.0.zip"
+                type="application/octet-stream"
+                sparkle:edSignature=""
+                length="0"
+            />
+            <description><![CDATA[
+                <h2>New in v1.1.0</h2>
+                <ul>
+                    <li>Custom refresh interval (1m/5m/10m/30m)</li>
+                    <li>Dark/Light mode adaptive status bar icon</li>
+                    <li>Usage alert notifications at 80% and 90%</li>
+                    <li>Usage history trend with sparkline charts</li>
+                    <li>Auto-update via Sparkle</li>
+                </ul>
+            ]]></description>
+        </item>
+    </channel>
+</rss>

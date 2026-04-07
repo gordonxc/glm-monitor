@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MenuBarView: View {
     @ObservedObject var viewModel: MonitorViewModel
+    @State private var trendRange: TrendRange = .day
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -109,6 +110,43 @@ struct MenuBarView: View {
                 Divider()
             }
 
+            // Usage trend
+            if viewModel.usageSnapshots.count >= 2 {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Usage Trend")
+                            .font(.headline)
+                        Spacer()
+                        Picker("", selection: $trendRange) {
+                            ForEach(TrendRange.allCases, id: \.self) { range in
+                                Text(range.label).tag(range)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 100)
+                    }
+
+                    let filtered = trendRange == .day
+                        ? viewModel.usageSnapshots.filter { $0.timestamp >= Date().addingTimeInterval(-24 * 60 * 60) }
+                        : viewModel.usageSnapshots
+
+                    HStack(spacing: 12) {
+                        SparklineChartView(
+                            snapshots: filtered,
+                            keyPath: \UsageSnapshot.sessionPercentage,
+                            title: "Session"
+                        )
+                        SparklineChartView(
+                            snapshots: filtered,
+                            keyPath: \UsageSnapshot.dailyPercentage,
+                            title: "Daily"
+                        )
+                    }
+                }
+                .padding(.vertical, 8)
+                Divider()
+            }
+
             // Footer
             VStack(spacing: 6) {
                 HStack {
@@ -118,6 +156,19 @@ struct MenuBarView: View {
                     Picker("", selection: $viewModel.statusBarMode) {
                         ForEach(StatusBarMode.allCases, id: \.self) { mode in
                             Text(mode.label).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 160)
+                }
+
+                HStack {
+                    Text("Refresh Interval")
+                        .font(.caption)
+                    Spacer()
+                    Picker("", selection: $viewModel.refreshInterval) {
+                        ForEach(RefreshInterval.allCases, id: \.self) { interval in
+                            Text(interval.label).tag(interval)
                         }
                     }
                     .pickerStyle(.segmented)
@@ -143,6 +194,12 @@ struct MenuBarView: View {
                             .foregroundColor(.secondary)
                     }
                     Spacer()
+                    Button("Check for Updates") {
+                        viewModel.checkForUpdates?()
+                    }
+                    .buttonStyle(.plain)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
                     Button("Restart") {
                         restartApp()
                     }
@@ -172,4 +229,16 @@ private func restartApp() {
     task.arguments = [url.path]
     try? task.run()
     NSApplication.shared.terminate(nil)
+}
+
+enum TrendRange: String, CaseIterable {
+    case day = "24h"
+    case week = "7d"
+
+    var label: String {
+        switch self {
+        case .day: return "24h"
+        case .week: return "7d"
+        }
+    }
 }

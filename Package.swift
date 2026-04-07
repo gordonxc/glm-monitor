@@ -4,9 +4,15 @@ import PackageDescription
 let package = Package(
     name: "GLMMonitor",
     platforms: [.macOS(.v13)],
+    dependencies: [
+        .package(url: "https://github.com/sparkle-project/Sparkle.git", from: "2.0.0")
+    ],
     targets: [
         .executableTarget(
             name: "GLMMonitor",
+            dependencies: [
+                .product(name: "Sparkle", package: "Sparkle")
+            ],
             path: "Sources/GLMMonitor"
         )
     ]
