@@ -11,9 +11,13 @@ A native macOS menu bar app that monitors [Z.ai](https://z.ai) (GLM Coding Plan)
 - **Web search count** — per-model breakdown (search-prime, web-reader, etc.)
 - **Color-coded indicators** — green (< 70%), orange (70–90%), red (> 90%)
 - **Status bar modes** — number (icon + %) or pie chart with outline
-- **Auto-refresh** — every 5 minutes
+- **Dark/Light mode adaptive icon** — colors adapt automatically to system appearance
+- **Custom refresh interval** — choose 1m / 5m / 10m / 30m
+- **Usage alert notifications** — macOS notifications at 80% and 90% thresholds
+- **Usage history trend** — sparkline charts with 24h / 7d time ranges
+- **Auto-update** — built-in update checking via Sparkle 2
 - **Launch at Login** — via macOS SMAppService
-- **Lightweight** — native Swift/SwiftUI, no external dependencies
+- **Lightweight** — native Swift/SwiftUI, minimal dependencies
 
 ## Screenshots
 
@@ -41,9 +45,13 @@ Combined icon + color-coded pie chart in the menu bar.
 │    web-reader:    462           │
 │  Resets monthly                 │
 │─────────────────────────────────│
+│  Usage Trend           [24h|7d] │
+│  Session ▁▂▃▄▅▆▇█  Daily ▁▂▃▄  │
+│─────────────────────────────────│
 │  Status Bar Style  [Number|Pie] │
+│  Refresh Interval   [1m|5m|10m|30m]
 │  Launch at Login         [ON]   │
-│  Updated 2:30 PM  [Restart][Quit]│
+│  Updated 2:30 PM [Updates][Restart][Quit]
 └─────────────────────────────────┘
 ```
 
@@ -91,7 +99,8 @@ echo '{"apiKey":"your-api-key-here"}' > ~/.glm-monitor/config.json
 
 - **Swift + SwiftUI** — macOS 13+ Ventura, `MenuBarExtra`
 - **Swift Package Manager** — `swift build -c release`
-- **No external dependencies** — Foundation URLSession for networking
+- **Sparkle 2** — auto-update framework
+- **UserNotifications** — native macOS alert notifications
 - **LSUIElement** — no dock icon, lives in the menu bar only
 
 ## License
